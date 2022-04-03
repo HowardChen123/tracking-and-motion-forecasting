@@ -30,10 +30,10 @@ class PredictionModel(nn.Module):
         super().__init__()
 
         # TODO: Implement
-        # self._encoder = FILL IN
+        self._encoder = nn.Linear(config.num_history_timesteps*3, 128)
 
         # TODO: Implement
-        # self._decoder = FILL IN
+        self._decoder = nn.Linear(128, config.num_label_timesteps*2)
 
     @staticmethod
     def _preprocess(x_batches: List[Tensor]) -> Tuple[Tensor, Tensor, Tensor]:
