@@ -33,7 +33,7 @@ class PredictionModel(nn.Module):
         self._encoder = nn.Linear(config.num_history_timesteps*3, 128)
 
         # TODO: Implement
-        self._decoder = nn.Linear(128, config.num_label_timesteps*2)
+        self._decoder = nn.Linear(128, config.num_label_timesteps*6)
 
     @staticmethod
     def _preprocess(x_batches: List[Tensor]) -> Tuple[Tensor, Tensor, Tensor]:
@@ -87,25 +87,41 @@ class PredictionModel(nn.Module):
         3. Unflatten batch and actor dimension
 
         Args:
-            out (Tensor): predicted input trajectories [batch_size * N x T * 2]
+            out (Tensor): predicted input trajectories [batch_size * N x T * 6]
             batch_ids (Tensor): id of each actor's batch in the flattened list [batch_size * N]
             original_x_pose (Tensor): original position and yaw of each actor at the latest timestep in SDV frame
                 [batch_size * N, 3]
 
         Returns:
-            List[Tensor]: List of length batch_size of output predicted trajectories in SDV frame [N x T x 2]
+            List[Tensor]: List of length batch_size of output predicted trajectories in SDV frame [N x T x 6]
         """
         num_actors = len(batch_ids)
-        out = out.reshape(num_actors, -1, 2)  # [batch_size * N x T x 2]
-
+        out = out.reshape(num_actors, -1, 6)  # [batch_size * N x T x 6]
+        
         # Transform from actor frame, to make the prediction problem easier
         transformed_out = transform_using_actor_frame(
-            out, original_x_pose, translate_to=False
+            out[:, :, :2], original_x_pose, translate_to=False      # torch.Size([85, 10, 2])
         )
+        # Transform the Covariance matrix to positive semidefinite
+        # transposed = torch.cat((out[: , :, 2].unsqueeze(-1), out[: , :, 4].unsqueeze(-1), 
+        #                         out[: , :, 3].unsqueeze(-1), out[: , :, 5].unsqueeze(-1)), 
+        #                         dim = 2)     # torch.Size([85, 10, 4])
+        a = torch.clone(out[:, :, 2])
+        b = torch.clone(out[:, :, 3])
+        c = torch.clone(out[:, :, 4])
+        d = torch.clone(out[:, :, 5])
+        covariance_matrix = out[:, :, 2:]
+        covariance_matrix[:, :, 0] = torch.square(a) + torch.square(b)
+        covariance_matrix[:, :, 1] = a*c+b*d
+        covariance_matrix[:, :, 2] = a*c+b*d
+        covariance_matrix[:, :, 3] = torch.square(c) + torch.square(d)
+
+        # Concat back with the covariance matrix
+        transformed_out = torch.cat((transformed_out, covariance_matrix), dim = 2)    # torch.Size([85, 10, 6])
 
         # Translate so that latest timestep for each actor is the origin
-
         out_batches = unflatten_batch(transformed_out, batch_ids)
+
         return out_batches
 
     def forward(self, x_batches: List[Tensor]) -> List[Tensor]:
@@ -116,12 +132,12 @@ class PredictionModel(nn.Module):
                 centroid, yaw and size in a bird's eye view voxel representation.
 
         Returns:
-            A [batch_size x N x T_out x 2] tensor, representing the future trajectory
+            A [batch_size x N x T_out x 6] tensor, representing the future trajectory
                 centroid outputs.
         """
         x, batch_ids, original_x_pose = self._preprocess(x_batches)
-        out = self._decoder(self._encoder(x))
-        out_batches = self._postprocess(out, batch_ids, original_x_pose)
+        out = self._decoder(self._encoder(x))   # torch.Size([85, 60])
+        out_batches = self._postprocess(out, batch_ids, original_x_pose)    # (out_batches[0]).shape == torch.Size([85, 10, 6])
         return out_batches
 
     @torch.no_grad()

@@ -5,6 +5,21 @@ import torch
 from torch import Tensor, nn
 
 
+def compute_NLL_loss(targets: Tensor, predictions: Tensor):
+    """Compute the negative log-likelihood (NLL) loss between `predictions` and `targets`.
+
+    Args:
+        targets A [num_actors x T x 2] tensor, containing the ground truth targets.
+        predictions: A [num_actors x T x 6] tensor, containing the predictions.
+
+    Returns:
+        A scalar NLL loss between `predictions` and `targets`
+    """
+    mu = predictions[:, :, :2]
+    sigma = prediction[:, :, 2:]
+    return
+
+
 def compute_l1_loss(targets: Tensor, predictions: Tensor) -> Tensor:
     """Compute the mean absolute error (MAE)/L1 loss between `predictions` and `targets`.
 
@@ -69,9 +84,8 @@ class PredictionLossFunction(torch.nn.Module):
         Returns:
             The scalar tensor containing the weighted loss between `predictions` and `targets`.
         """
-        predictions_tensor = torch.cat(predictions)
-        targets_tensor = torch.cat(targets)
-
+        predictions_tensor = torch.cat(predictions)  # [num_actors x T x 6]
+        targets_tensor = torch.cat(targets)  # [num_actors x T x 2]
         # 1. Unpack the targets tensor.
         target_centroids = targets_tensor[..., :2]  # [batch_size * num_actors x T x 2]
 
