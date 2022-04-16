@@ -99,11 +99,11 @@ def train(
     data_root: str,
     output_root: str,
     seed: int = 42,
-    batch_size: int = 32,
+    batch_size: int = 128,
     num_workers: int = 8,
-    num_epochs: int = 25,
+    num_epochs: int = 40,
     log_frequency: int = int(269 // 16),
-    learning_rate: float = 1e-4,
+    learning_rate: float = 1e-5,
     checkpoint_path: Optional[str] = None,
 ) -> None:
     """Train detector on the Pandaset dataset.
