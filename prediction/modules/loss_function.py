@@ -24,47 +24,43 @@ def compute_NLL_loss(targets: Tensor, predictions: Tensor):
 
     num_actors, T, _ = targets.shape
 
-    mu = predictions[:, :, :2]
+    input = predictions[:, :, :2]
     sigma = predictions[:, :, 2:]
 
-    # sigma_x = predictions[:, :, 2].unsqueeze(-1)
-    # sigma_y = predictions[:, :, 3].unsqueeze(-1)
-    # sigma = torch.cat((sigma_x, sigma_y), dim = 2)
-
-    # loss = nn.GaussianNLLLoss(reduction = 'sum')
+    loss = nn.GaussianNLLLoss(reduction = 'sum')
     
-    # nllLoss = loss(mu, targets, sigma)
+    nllLoss = loss(input, targets, sigma)
 
-    det_sigma = (sigma[:, :, 0]*sigma[:, :, 3] - sigma[:, :, 1]*sigma[:, :, 2]).unsqueeze(-1)
+    # det_sigma = (sigma[:, :, 0]*sigma[:, :, 3] - sigma[:, :, 1]*sigma[:, :, 2]).unsqueeze(-1)
 
-    # det_sigma[det_sigma <= 0] = 1e-7
+    # # det_sigma[det_sigma <= 0] = 1e-7
 
-    sigma_inv = torch.clone(sigma)
-    sigma_inv[:, :, 0] = torch.clone(sigma[:, :, 3])
-    sigma_inv[:, :, 1] = torch.clone(-sigma[:, :, 1])
-    sigma_inv[:, :, 2] = torch.clone(-sigma[:, :, 2])
-    sigma_inv[:, :, 3] = torch.clone(sigma[:, :, 0])
-    sigma_inv = sigma_inv/torch.cat((det_sigma, det_sigma, det_sigma, det_sigma), dim = 2)
+    # sigma_inv = torch.clone(sigma)
+    # sigma_inv[:, :, 0] = torch.clone(sigma[:, :, 3])
+    # sigma_inv[:, :, 1] = torch.clone(-sigma[:, :, 1])
+    # sigma_inv[:, :, 2] = torch.clone(-sigma[:, :, 2])
+    # sigma_inv[:, :, 3] = torch.clone(sigma[:, :, 0])
+    # sigma_inv = sigma_inv/torch.cat((det_sigma, det_sigma, det_sigma, det_sigma), dim = 2)
 
-    sigma_inv = sigma_inv.reshape(num_actors, T, 2, 2)
-    ll = torch.matmul((targets - mu).reshape(num_actors, T, 1, 2), sigma_inv)
-    ll = torch.matmul(ll, (targets - mu).unsqueeze(-1)).squeeze(-1)
+    # sigma_inv = sigma_inv.reshape(num_actors, T, 2, 2)
+    # ll = torch.matmul((targets - mu).reshape(num_actors, T, 1, 2), sigma_inv)
+    # ll = torch.matmul(ll, (targets - mu).unsqueeze(-1)).squeeze(-1)
 
-    # print("Sigma Inv", torch.sum(sigma_inv.isnan()))
-    # print("Targets", torch.sum(targets.isnan()))
-    # print("Mu", torch.sum(mu.isnan()))
-    # print("ll", torch.sum(ll.isnan()))
+    # # print("Sigma Inv", torch.sum(sigma_inv.isnan()))
+    # # print("Targets", torch.sum(targets.isnan()))
+    # # print("Mu", torch.sum(mu.isnan()))
+    # # print("ll", torch.sum(ll.isnan()))
 
-    nll = 0.5*(torch.log(det_sigma + 1e-7) + ll)
+    # nll = 0.5*(torch.log(det_sigma + 1e-7) + ll)
 
-    # print("Det Sigma", torch.sum(det_sigma.isnan()))
-    # print("Det Sigma Less than 0", torch.sum(det_sigma <= 0))
-    # print("Log Det Sigma", torch.sum(torch.log(det_sigma).isnan()))
-    # print("Log Det Sigma Negative Inf", torch.sum(torch.log(det_sigma + eps) == float("-inf")))
-    # print("NLL loss", torch.sum(nll)/num_actors, "\n")
+    # # print("Det Sigma", torch.sum(det_sigma.isnan()))
+    # # print("Det Sigma Less than 0", torch.sum(det_sigma <= 0))
+    # # print("Log Det Sigma", torch.sum(torch.log(det_sigma).isnan()))
+    # # print("Log Det Sigma Negative Inf", torch.sum(torch.log(det_sigma + eps) == float("-inf")))
+    # # print("NLL loss", torch.sum(nll)/num_actors, "\n")
 
-    return torch.sum(nll)
-    # return nllLoss
+    # return torch.sum(nll)
+    return nllLoss
 
 
 def compute_l1_loss(targets: Tensor, predictions: Tensor) -> Tensor:
