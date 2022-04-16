@@ -103,9 +103,6 @@ class PredictionModel(nn.Module):
             out[:, :, :2], original_x_pose, translate_to=False      # torch.Size([85, 10, 2])
         )
         # Transform the Covariance matrix to positive semidefinite
-        # transposed = torch.cat((out[: , :, 2].unsqueeze(-1), out[: , :, 4].unsqueeze(-1), 
-        #                         out[: , :, 3].unsqueeze(-1), out[: , :, 5].unsqueeze(-1)), 
-        #                         dim = 2)     # torch.Size([85, 10, 4])
         a = torch.clone(out[:, :, 2])
         b = torch.clone(out[:, :, 3])
         c = torch.clone(out[:, :, 4])
@@ -157,7 +154,7 @@ class PredictionModel(nn.Module):
 
         # Add dummy values for yaws and boxes here because we will fill them in from the ground truth
         return Trajectories(
-            pred,
+            pred[..., :2],
             torch.zeros(pred.shape[0], num_timesteps),
             torch.ones(pred.shape[0], num_coords),
         )
