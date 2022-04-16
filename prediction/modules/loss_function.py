@@ -10,7 +10,7 @@ def compute_NLL_loss(targets: Tensor, predictions: Tensor):
 
     Args:
         targets A [num_actors x T x 2] tensor, containing the ground truth targets.
-        predictions: A [num_actors x T x 6] tensor, containing the predictions.
+        predictions: A [num_actors x T x 4] tensor, containing the predictions.
 
     Returns:
         A scalar NLL loss between `predictions` and `targets`
@@ -20,16 +20,24 @@ def compute_NLL_loss(targets: Tensor, predictions: Tensor):
     mask = torch.isnan(targets).any(-1).any(-1)
     targets = targets[~mask].view(-1, T, 2)
     num_actors, T, _ = predictions.shape
-    predictions = predictions[~mask].view(-1, T, 6)
+    predictions = predictions[~mask].view(-1, T, 4)
 
     num_actors, T, _ = targets.shape
 
     mu = predictions[:, :, :2]
     sigma = predictions[:, :, 2:]
 
+    # sigma_x = predictions[:, :, 2].unsqueeze(-1)
+    # sigma_y = predictions[:, :, 3].unsqueeze(-1)
+    # sigma = torch.cat((sigma_x, sigma_y), dim = 2)
+
+    # loss = nn.GaussianNLLLoss(reduction = 'sum')
+    
+    # nllLoss = loss(mu, targets, sigma)
+
     det_sigma = (sigma[:, :, 0]*sigma[:, :, 3] - sigma[:, :, 1]*sigma[:, :, 2]).unsqueeze(-1)
 
-    det_sigma[det_sigma <= 0] = 1e-7
+    # det_sigma[det_sigma <= 0] = 1e-7
 
     sigma_inv = torch.clone(sigma)
     sigma_inv[:, :, 0] = torch.clone(sigma[:, :, 3])
@@ -47,7 +55,7 @@ def compute_NLL_loss(targets: Tensor, predictions: Tensor):
     # print("Mu", torch.sum(mu.isnan()))
     # print("ll", torch.sum(ll.isnan()))
 
-    nll = 0.5*(torch.log(det_sigma) + ll)
+    nll = 0.5*(torch.log(det_sigma + 1e-7) + ll)
 
     # print("Det Sigma", torch.sum(det_sigma.isnan()))
     # print("Det Sigma Less than 0", torch.sum(det_sigma <= 0))
@@ -55,7 +63,8 @@ def compute_NLL_loss(targets: Tensor, predictions: Tensor):
     # print("Log Det Sigma Negative Inf", torch.sum(torch.log(det_sigma + eps) == float("-inf")))
     # print("NLL loss", torch.sum(nll)/num_actors, "\n")
 
-    return torch.sum(nll)/num_actors
+    return torch.sum(nll)
+    # return nllLoss
 
 
 def compute_l1_loss(targets: Tensor, predictions: Tensor) -> Tensor:
