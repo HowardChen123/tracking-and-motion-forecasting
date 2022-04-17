@@ -30,7 +30,21 @@ class PredictionModel(nn.Module):
         super().__init__()
 
         # TODO: Implement
-        self._encoder = nn.Linear(config.num_history_timesteps*3, 128)
+        modules = []
+        hidden_dim = [32, 64, 128]
+        input_dim = config.num_history_timesteps*3
+        for h_dim in hidden_dim:
+            modules.append(
+                nn.Sequential(
+                    nn.Linear(input_dim, h_dim),
+                    nn.ReLU()
+                )
+            )
+            input_dim = h_dim
+
+        self._encoder = nn.Sequential(*modules)
+        self.fc_mu = nn.Linear(128, 128)
+        self.fc_var = nn.Linear(128, 128)
 
         # TODO: Implement
         self._decoder = nn.Linear(128, config.num_label_timesteps*2)
@@ -120,9 +134,21 @@ class PredictionModel(nn.Module):
                 centroid outputs.
         """
         x, batch_ids, original_x_pose = self._preprocess(x_batches)
-        out = self._decoder(self._encoder(x))
+
+        encode = self._encoder(x)
+        mu = self.fc_mu(encode)
+        log_var = self.fc_var(encode)
+        z = self.reparameterize(mu, log_var)
+
+        out = self._decoder(z)
         out_batches = self._postprocess(out, batch_ids, original_x_pose)
         return out_batches
+
+    def reparameterize(self, mu: Tensor, logvar: Tensor) -> Tensor:
+
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return eps * std + mu
 
     @torch.no_grad()
     def inference(self, history: Tensor) -> Trajectories:
