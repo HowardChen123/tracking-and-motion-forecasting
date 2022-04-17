@@ -55,9 +55,12 @@ class Tracker:
         Returns:
             cost_matrix: cost matrix of shape [M, N]
         """
-        # TODO: Replace this stub code by making use of iou_2d
         M, N = bboxes1.shape[0], bboxes2.shape[0]
+        # call iou_2d
+        iou_2d = iou_2d(bboxes1, bboxes2) # shape (M, N)
         cost_matrix = torch.ones((M, N))
+        # C(i, j) = 1 − IoU(B1(i), B2(j))
+        cost_matrix = 1 - iou_2d
         return cost_matrix
 
     def associate_greedy(
@@ -75,9 +78,14 @@ class Tracker:
         """
         # TODO: Replace this stub code by invoking self.cost_matrix and greedy_matching
         M, N = bboxes1.shape[0], bboxes2.shape[0]
-        cost_matrix = torch.ones((M, N))
+        # cost_matrix = torch.ones((M, N))
+        cost_matrix = self.cost_matrix(bboxes1, bboxes2)
+        matching = greedy_matching(cost_matrix)
+        row_ids, col_ids = matching
         assign_matrix = torch.zeros((M, N))
-
+        min_val = min(M, N)
+        for i in range(min_val):
+            assign_matrix[row_ids[i]][col_ids[i]] = 1
         return assign_matrix, cost_matrix
 
     def associate_hungarian(
@@ -95,9 +103,14 @@ class Tracker:
         """
         # TODO: Replace this stub code by invoking self.cost_matrix and hungarian_matching
         M, N = bboxes1.shape[0], bboxes2.shape[0]
-        cost_matrix = torch.ones((M, N))
+        # cost_matrix = torch.ones((M, N))
+        cost_matrix = self.cost_matrix(bboxes1, bboxes2)
+        matching = hungarian_matching(cost_matrix)
+        row_ids, col_ids = matching
         assign_matrix = torch.zeros((M, N))
-
+        min_val = min(M, N)
+        for i in range(min_val):
+            assign_matrix[row_ids[i]][col_ids[i]] = 1
         return assign_matrix, cost_matrix
 
     def track_consecutive_frame(
@@ -125,7 +138,12 @@ class Tracker:
             raise ValueError(f"Unknown association method {self.associate_method}")
 
         # TODO: Filter out matches with costs >= self.match_th
-
+        # set A(i, j) = 0 if C(i, j) >= self.match_th
+        M, N = bboxes1.shape[0], bboxes2.shape[0]
+        for i in range(M):
+            for j in range(N):
+                if cost_matrix[i][j] >= self.match_th:
+                    assign_matrix[i][j] = 0
         return assign_matrix, cost_matrix
 
     def track(self, bboxes_seq: List[Tensor], scores_seq: List[Tensor]):

@@ -8,6 +8,7 @@ def test_iou_2d() -> None:
     bboxes_a = np.array([[0.0, 0.0, 2.0, 1.0, 0.0], [0.0, 0.0, 2.0, 1.0, np.pi / 2]])
     bboxes_b = np.array([[1.0, 0.0, 2.0, 1.0, 0.0], [1.0, 0.0, 2.0, 1.0, np.pi / 2]])
     iou_mat = iou_2d(bboxes_a, bboxes_b)
+    print(iou_mat)
     exp_iou_mat = np.array([[1 / 3.0, 0.5 / 3.5], [0.5 / 3.5, 0.0]])
     np.testing.assert_allclose(iou_mat, exp_iou_mat, atol=1e-5)
 

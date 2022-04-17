@@ -1,5 +1,8 @@
+from pdb import line_prefix
 import numpy as np
+from shapely import affinity
 from shapely.geometry import Polygon
+import math
 
 
 def iou_2d(bboxes1: np.ndarray, bboxes2: np.ndarray) -> np.ndarray:
@@ -13,6 +16,28 @@ def iou_2d(bboxes1: np.ndarray, bboxes2: np.ndarray) -> np.ndarray:
         You should use the Polygon class from the shapely package to compute the area of intersection/union.
     """
     M, N = bboxes1.shape[0], bboxes2.shape[0]
-    # TODO: Replace this stub code.
     iou_mat = np.zeros((M, N))
+    for i in range(M):
+        bbox_i = bboxes1[i]
+        x_i = bbox_i[0]
+        y_i = bbox_i[1]
+        l_i = bbox_i[2] / 2
+        w_i = bbox_i[3] / 2
+        yaw_i = bbox_i[4] * 180 / math.pi # convert to degree
+        poly_i = Polygon([(x_i-l_i, y_i-w_i),(x_i-l_i, y_i+w_i),(x_i+l_i, y_i+w_i),(x_i+l_i, y_i-w_i)]) # (bottom left, top left, top right, bottom right)
+        rotated_poly_i = affinity.rotate(poly_i, yaw_i, origin='centroid')
+        for j in range(N):
+            bbox_j = bboxes2[j]
+            x_j = bbox_j[0]
+            y_j = bbox_j[1]
+            l_j = bbox_j[2] / 2
+            w_j = bbox_j[3] / 2
+            yaw_j = bbox_j[4] * 180 / math.pi # convert to degree
+            poly_j = Polygon([(x_j-l_j, y_j-w_j),(x_j-l_j, y_j+w_j),(x_j+l_j, y_j+w_j),(x_j+l_j, y_j-w_j)]) # (bottom left, top left, top right, bottom right)
+            rotated_poly_j = affinity.rotate(poly_j, yaw_j, origin='centroid')
+            if rotated_poly_i.intersection(rotated_poly_j).area == 0.0 or rotated_poly_i.union(rotated_poly_j).area == 0.0:
+                iou_mat[i][j] = 0.0
+            else:
+                iou_mat[i][j] = rotated_poly_i.intersection(rotated_poly_j).area / rotated_poly_i.union(rotated_poly_j).area 
+            # iou_mat[i][j] = poly_i.intersection(poly_j).area / poly_i.union(poly_j).area
     return iou_mat

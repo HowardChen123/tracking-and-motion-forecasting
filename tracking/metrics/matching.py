@@ -176,12 +176,44 @@ class Matching:
     def compute_motp(self) -> float:
         """Multiple object tracking precision"""
         # TODO: Replace this stub code.
-        return 0.0
+        # d_i_t
+        d_i_t = self.matched_dists_list # distance/iou of each matched object and hypothesis
+        d_i_t_sum = 0
+        for l in d_i_t:
+            d_i_t_sum += sum(l)
+        # c_t
+        c_t = self.num_matches_list # number of matches at each time step
+        c_t_sum = sum(c_t)
+        if c_t_sum == 0:
+            return 0.0
+        else:
+            return d_i_t_sum / c_t_sum
 
     def compute_mota(self) -> float:
         """Multiple object tracking accuracy"""
         # TODO: Replace this stub code.
-        return 0.0
+        mt = self.num_misses_list # number of misses at each time step
+        mt_sum = sum(mt)
+        fpt = self.num_false_positives_list # number of false positives at each time step
+        fpt_sum = sum(fpt)
+        mmet = self.num_mismatches_list # number of mismatches/switches at each time step
+        mmet_sum = sum(mmet)
+        print(mt_sum, fpt_sum, mmet_sum)
+        # matched {object actor id: hypothesis actor id} at each time step
+        l = self.matchings_list
+        gt = 0
+        for dict in l:
+            gt_labels = []
+            for key in dict:
+                if key not in gt_labels:
+                    gt_labels.append(key)
+                if dict[key] not in gt_labels:
+                    gt_labels.append(dict[key])
+            gt += len(gt_labels)
+        if gt == 0:
+            return 0.0
+        else:
+            return 1 - (mt_sum + fpt_sum + mmet_sum) / gt
 
     def compute_gt_coverage_percentage(
         self, det_tracklets: Tracklets
