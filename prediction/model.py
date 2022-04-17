@@ -42,9 +42,10 @@ class PredictionModel(nn.Module):
             )
             input_dim = h_dim
 
-        self._encoder = nn.Sequential(*modules)
-        self.fc_mu = nn.Linear(128, 128)
-        self.fc_var = nn.Linear(128, 128)
+        # self._encoder = nn.Sequential(*modules)
+        self._encoder = nn.Linear(config.num_history_timesteps*3, 128)
+        # self.fc_mu = nn.Linear(128, 128)
+        # self.fc_var = nn.Linear(128, 128)
 
         # TODO: Implement
         self._decoder = nn.Linear(128, config.num_label_timesteps*2)
@@ -136,11 +137,11 @@ class PredictionModel(nn.Module):
         x, batch_ids, original_x_pose = self._preprocess(x_batches)
 
         encode = self._encoder(x)
-        mu = self.fc_mu(encode)
-        log_var = self.fc_var(encode)
-        z = self.reparameterize(mu, log_var)
+        # mu = self.fc_mu(encode)
+        # log_var = self.fc_var(encode)
+        # z = self.reparameterize(mu, log_var)
 
-        out = self._decoder(z)
+        out = self._decoder(encode)
         out_batches = self._postprocess(out, batch_ids, original_x_pose)
         return out_batches
 

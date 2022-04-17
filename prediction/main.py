@@ -103,7 +103,7 @@ def train(
     num_workers: int = 8,
     num_epochs: int = 25,
     log_frequency: int = int(269 // 16),
-    learning_rate: float = 1e-4,
+    learning_rate: float = 1e-5,
     checkpoint_path: Optional[str] = None,
 ) -> None:
     """Train detector on the Pandaset dataset.
