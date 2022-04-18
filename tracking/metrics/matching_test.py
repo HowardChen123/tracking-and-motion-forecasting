@@ -113,6 +113,7 @@ def test_diff_gt_det():
     assert matching.matched_dists_list == [[1.0], [1.0, 1.0], [1.0], []]
     assert matching.num_false_positives_list == [0, 0, 1, 1]
     assert matching.num_misses_list == [0, 0, 1, 0]
+    print(matching.compute_motp(), matching.compute_mota())
 
     assert matching.compute_motp() == 1.0
     np.testing.assert_allclose(matching.compute_mota(), 0.2)

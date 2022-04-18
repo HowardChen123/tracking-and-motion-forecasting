@@ -11,9 +11,11 @@ class Helpers:
         greedy_matrix, hungarian_matrix = np.zeros((M, N)), np.zeros((M, N))
 
         row_ids, col_ids = greedy_matching(cost_matrix)
+        print(row_ids, col_ids)
         greedy_matrix[row_ids, col_ids] = 1
         greedy_cost = np.sum(cost_matrix * greedy_matrix)
         row_ids, col_ids = hungarian_matching(cost_matrix)
+        print(row_ids, col_ids)
         hungarian_matrix[row_ids, col_ids] = 1
         hungarian_cost = np.sum(cost_matrix * hungarian_matrix)
 

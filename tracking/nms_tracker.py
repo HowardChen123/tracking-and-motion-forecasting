@@ -104,16 +104,12 @@ class Tracker:
         """
         # TODO: Replace this stub code by invoking self.cost_matrix and hungarian_matching
         M, N = bboxes1.shape[0], bboxes2.shape[0]
-        # cost_matrix = torch.ones((M, N))
-        cost_matrix = self.cost_matrix(bboxes1, bboxes2)
-        matching = hungarian_matching(cost_matrix)
-        row_ids, col_ids = matching
         assign_matrix = torch.zeros((M, N))
-        min_val = min(M, N)
-        for i in range(min_val):
-            assign_matrix[row_ids[i]][col_ids[i]] = 1
+        cost_matrix = self.cost_matrix(bboxes1, bboxes2)
+        nms_i = nms_iou(bboxes1, bboxes2)
+        for i in range(len(nms_i)):
+            assign_matrix[nms_i[i][0]][nms_i[i][1]] = 1
         return assign_matrix, cost_matrix
-
 
     def track_consecutive_frame(
         self, bboxes1: Tensor, bboxes2: Tensor
