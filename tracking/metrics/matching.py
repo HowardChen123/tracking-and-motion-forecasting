@@ -198,13 +198,16 @@ class Matching:
         fpt_sum = sum(fpt)
         mmet = self.num_mismatches_list # number of mismatches/switches at each time step
         mmet_sum = sum(mmet)
-        print(mt_sum, fpt_sum, mmet_sum)
         # matched {object actor id: hypothesis actor id} at each time step
         l = self.matchings_list
+        match = self.num_matches_list # number of matches at each time step
+        # # gt = sum(match) * 2 - mmet_sum
+        # gt = sum(match) + mmet_sum
         gt = 0
         for dict in l:
             gt_labels = []
             for key in dict:
+                # print(f"{key}:{dict[key]}")
                 if key not in gt_labels:
                     gt_labels.append(key)
                 if dict[key] not in gt_labels:
@@ -213,7 +216,8 @@ class Matching:
         if gt == 0:
             return 0.0
         else:
-            return 1 - (mt_sum + fpt_sum + mmet_sum) / gt
+            print(gt, mt_sum, fpt_sum, mmet_sum, sum(match), gt - sum(match) + mt_sum)
+            return 1 - (mt_sum + fpt_sum + mmet_sum) / (gt - sum(match) + mt_sum)
 
     def compute_gt_coverage_percentage(
         self, det_tracklets: Tracklets
