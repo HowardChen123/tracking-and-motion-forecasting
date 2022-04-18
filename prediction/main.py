@@ -22,7 +22,7 @@ def overfit(
     data_root: str,
     output_root: str,
     seed: int = 42,
-    num_iterations: int = 3000,
+    num_iterations: int = 1000,
     log_frequency: int = 100,
     learning_rate: float = 1e-4,
 ) -> None:
@@ -99,11 +99,11 @@ def train(
     data_root: str,
     output_root: str,
     seed: int = 42,
-    batch_size: int = 128,
+    batch_size: int = 32,
     num_workers: int = 8,
-    num_epochs: int = 40,
+    num_epochs: int = 25,
     log_frequency: int = int(269 // 16),
-    learning_rate: float = 1e-5,
+    learning_rate: float = 1e-4,
     checkpoint_path: Optional[str] = None,
 ) -> None:
     """Train detector on the Pandaset dataset.

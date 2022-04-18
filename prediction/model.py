@@ -30,17 +30,25 @@ class PredictionModel(nn.Module):
         super().__init__()
 
         # TODO: Implement
-        self._encoder = nn.Sequential(
-            nn.Linear(config.num_history_timesteps*3, 512),
-            nn.ReLU()
-        )
+        modules = []
+        hidden_dim = [32, 64, 128]
+        input_dim = config.num_history_timesteps*3
+        for h_dim in hidden_dim:
+            modules.append(
+                nn.Sequential(
+                    nn.Linear(input_dim, h_dim),
+                    nn.ReLU()
+                )
+            )
+            input_dim = h_dim
+        # self._encoder = nn.Sequential(*modules)
+        # self.fc_mu = nn.Linear(128, 128)
+        # self.fc_var = nn.Linear(128, 128)
+        self._encoder = nn.Linear(config.num_history_timesteps*3, 128)
 
         # TODO: Implement
-        self._decoder = nn.Sequential(
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Linear(256, config.num_label_timesteps*4)
-        )
+        self._decoder = nn.Linear(128, config.num_label_timesteps*5)
+        
 
     @staticmethod
     def _preprocess(x_batches: List[Tensor]) -> Tuple[Tensor, Tensor, Tensor]:
@@ -103,7 +111,7 @@ class PredictionModel(nn.Module):
             List[Tensor]: List of length batch_size of output predicted trajectories in SDV frame [N x T x 4]
         """
         num_actors = len(batch_ids)
-        out = out.reshape(num_actors, -1, 4)  # [batch_size * N x T x 4]
+        out = out.reshape(num_actors, -1, 5)  # [batch_size * N x T x 4]
         
         # Transform from actor frame, to make the prediction problem easier
         transformed_out = transform_using_actor_frame(
@@ -112,11 +120,13 @@ class PredictionModel(nn.Module):
         # Calculate the Covariance matrix
         sigma_x = torch.clone(out[:, :, 2])
         sigma_y = torch.clone(out[:, :, 3])
-        # rho = nn.functional.sigmoid(torch.clone(out[:, :, 4]))
+        rho = nn.functional.sigmoid(torch.clone(out[:, :, 4]))
 
-        covariance_matrix = out[:, :, 2:]
+        covariance_matrix = out[:, :, 1:]
         covariance_matrix[:, :, 0] = torch.square(sigma_x)
-        covariance_matrix[:, :, 1] = torch.square(sigma_y)
+        covariance_matrix[:, :, 1] = rho*sigma_x*sigma_y
+        covariance_matrix[:, :, 2] = rho*sigma_x*sigma_y
+        covariance_matrix[:, :, 3] = torch.square(sigma_y)
 
         # Concat back with the covariance matrix
         transformed_out = torch.cat((transformed_out, covariance_matrix), dim = 2)    # torch.Size([85, 10, 4])
@@ -125,6 +135,12 @@ class PredictionModel(nn.Module):
         out_batches = unflatten_batch(transformed_out, batch_ids)
 
         return out_batches
+
+    def reparameterize(self, mu: Tensor, logvar: Tensor) -> Tensor:
+
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return eps * std + mu
 
     def forward(self, x_batches: List[Tensor]) -> List[Tensor]:
         """Perform a forward pass of the model's neural network.
@@ -138,7 +154,12 @@ class PredictionModel(nn.Module):
                 centroid outputs.
         """
         x, batch_ids, original_x_pose = self._preprocess(x_batches)
-        out = self._decoder(self._encoder(x))   # torch.Size([85, 60])
+        encode = self._encoder(x)
+        # mu = self.fc_mu(encode)
+        # log_var = self.fc_var(encode)
+        # z = self.reparameterize(mu, log_var)
+
+        out = self._decoder(encode)
         out_batches = self._postprocess(out, batch_ids, original_x_pose)    # (out_batches[0]).shape == torch.Size([85, 10, 4])
         return out_batches
 
