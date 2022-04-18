@@ -67,7 +67,6 @@ def visualize_trajectories(
 
     return fig, ax
 
-
 def vis_pred_labels(
     pred_trajectories: Trajectories,
     label_trajectories: Trajectories,

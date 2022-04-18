@@ -30,12 +30,18 @@ class Trajectories:
     @property
     def boxes_x(self) -> torch.Tensor:
         """Return the x-axis bounding box size."""
-        return self.expanded_boxes[:, :, 0]
+        if len(self.boxes.shape) == 2:
+            return self.expanded_boxes[:, :, 0]
+        else:
+            return self.boxes[:, :, 0]
 
     @property
     def boxes_y(self) -> torch.Tensor:
         """Return the y-axis bounding box size."""
-        return self.expanded_boxes[:, :, 1]
+        if len(self.boxes.shape) == 2:
+            return self.expanded_boxes[:, :, 1]
+        else:
+            return self.boxes[:, :, 1]
 
     @property
     def flattened_centroids(self) -> torch.Tensor:
