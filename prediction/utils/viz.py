@@ -11,9 +11,6 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from detection.utils.visualization import plot_box
 from prediction.types import Trajectories
 
-from matplotlib.patches import Ellipse, Arrow
-import numpy as np
-
 
 def visualize_trajectories(
     trajectories: Trajectories,
@@ -50,7 +47,7 @@ def visualize_trajectories(
                 start_color[2] * (1 - ratio) + end_color[2] * ratio,
                 0.3,
             )
-            plot_ellipse(
+            plot_box(
                 ax,
                 centroids_x[ix, t].item(),
                 centroids_y[ix, t].item(),
@@ -69,35 +66,6 @@ def visualize_trajectories(
     cb1.set_label(name)
 
     return fig, ax
-
-def plot_ellipse(ax: Axes, x: float, y: float, yaw: float,
-    length: float, width: float, color, label: str,
-) -> None:
-
-    ax.add_patch(
-        Ellipse(
-            (x, y),
-            length,
-            width,
-            np.rad2deg(yaw),
-            edgecolor=color,
-            facecolor=color,
-            label=label,
-        )
-    )
-
-    ax.add_patch(
-        Arrow(
-            x,
-            y,
-            np.cos(yaw) * length / 2,
-            np.sin(yaw) * length / 2,
-            edgecolor=color,
-            facecolor=color,
-            capstyle="projecting",
-            lw=1,
-        )
-    )
 
 def vis_pred_labels(
     pred_trajectories: Trajectories,
