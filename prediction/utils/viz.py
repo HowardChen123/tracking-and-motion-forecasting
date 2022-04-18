@@ -50,7 +50,7 @@ def visualize_trajectories(
                 start_color[2] * (1 - ratio) + end_color[2] * ratio,
                 0.3,
             )
-            plot_box(
+            plot_ellipse(
                 ax,
                 centroids_x[ix, t].item(),
                 centroids_y[ix, t].item(),
@@ -70,19 +70,10 @@ def visualize_trajectories(
 
     return fig, ax
 
-def plot_ellipse(
-    ax: Axes,
-    x: float,
-    y: float,
-    yaw: float,
-    length: float,
-    width: float,
-    color,
-    label: str,
+def plot_ellipse(ax: Axes, x: float, y: float, yaw: float,
+    length: float, width: float, color, label: str,
 ) -> None:
-    """Plot a bounding ellipse onto the given axes."""
 
-    # Plot rectangle
     ax.add_patch(
         Ellipse(
             (x, y),
@@ -95,7 +86,6 @@ def plot_ellipse(
         )
     )
 
-    # Plot orientation arrow
     ax.add_patch(
         Arrow(
             x,
